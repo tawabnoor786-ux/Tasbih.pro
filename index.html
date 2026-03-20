@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tasbih Pro</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top, #0f2027, #0a1920);
+  color: #e0f7f5;
+  text-align: center;
+}
+
+.container {
+  padding: 20px;
+}
+
+h1 {
+  font-size: 28px;
+  margin-bottom: 5px;
+}
+
+.arabic {
+  font-size: 22px;
+  opacity: 0.8;
+  margin-bottom: 15px;
+}
+
+.card {
+  background: rgba(255,255,255,0.05);
+  padding: 20px;
+  margin: 15px 0;
+  border-radius: 20px;
+  backdrop-filter: blur(12px);
+}
+
+.count {
+  font-size: 42px;
+  margin: 10px 0;
+}
+
+button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 30px;
+  margin: 5px;
+  font-size: 15px;
+}
+
+.tap {
+  background: #00c9a7;
+}
+
+.reset {
+  background: #ff4d4d;
+}
+
+.progress {
+  height: 8px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.bar {
+  height: 100%;
+  background: #00e6c3;
+  width: 0%;
+}
+
+.streak {
+  margin-top: 10px;
+  font-size: 18px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>🧿 Tasbih Pro</h1>
+  <div class="arabic">سبحان الله • الحمد لله • الله أكبر</div>
+
+  <div class="streak">🔥 Streak: <span id="streak">0</span> days</div>
+
+  <div class="card">
+    <h3>SubhanAllah</h3>
+    <div class="count" id="subhan">0</div>
+    <button class="tap" onclick="add('subhan')">+1</button>
+    <button class="reset" onclick="resetCount('subhan')">Reset</button>
+    <div class="progress"><div id="bar-subhan" class="bar"></div></div>
+  </div>
+
+  <div class="card">
+    <h3>Alhamdulillah</h3>
+    <div class="count" id="alham">0</div>
+    <button class="tap" onclick="add('alham')">+1</button>
+    <button class="reset" onclick="resetCount('alham')">Reset</button>
+    <div class="progress"><div id="bar-alham" class="bar"></div></div>
+  </div>
+
+  <div class="card">
+    <h3>Allahu Akbar</h3>
+    <div class="count" id="akbar">0</div>
+    <button class="tap" onclick="add('akbar')">+1</button>
+    <button class="reset" onclick="resetCount('akbar')">Reset</button>
+    <div class="progress"><div id="bar-akbar" class="bar"></div></div>
+  </div>
+
+  <div class="card">
+    <h3>🎯 Daily Target</h3>
+    <input type="number" id="target" placeholder="Enter target" />
+    <button onclick="saveTarget()">Save</button>
+  </div>
+</div>
+
+<script>
+let today = new Date().toLocaleDateString();
+
+let data = JSON.parse(localStorage.getItem("tasbihPro")) || {
+  subhan: 0,
+  alham: 0,
+  akbar: 0,
+  target: 100,
+  lastDate: today,
+  streak: 0
+};
+
+// DAILY RESET + STREAK
+if (data.lastDate !== today) {
+  let yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  let yDate = yesterday.toLocaleDateString();
+
+  if (data.lastDate === yDate && 
+      (data.subhan + data.alham + data.akbar) >= data.target) {
+    data.streak++;
+  } else {
+    data.streak = 0;
+  }
+
+  data.subhan = 0;
+  data.alham = 0;
+  data.akbar = 0;
+  data.lastDate = today;
+}
+
+function save() {
+  localStorage.setItem("tasbihPro", JSON.stringify(data));
+}
+
+function updateUI() {
+  document.getElementById("subhan").innerText = data.subhan;
+  document.getElementById("alham").innerText = data.alham;
+  document.getElementById("akbar").innerText = data.akbar;
+  document.getElementById("streak").innerText = data.streak;
+
+  updateBar('subhan');
+  updateBar('alham');
+  updateBar('akbar');
+}
+
+function updateBar(type) {
+  let percent = (data[type] / data.target) * 100;
+  if (percent > 100) percent = 100;
+  document.getElementById("bar-" + type).style.width = percent + "%";
+}
+
+function add(type) {
+  data[type]++;
+  save();
+  updateUI();
+  navigator.vibrate?.(20);
+}
+
+function resetCount(type) {
+  data[type] = 0;
+  save();
+  updateUI();
+}
+
+function saveTarget() {
+  let val = document.getElementById("target").value;
+  if (val > 0) {
+    data.target = parseInt(val);
+    save();
+    updateUI();
+  }
+}
+
+updateUI();
+save();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+
+</body>
+</html>
